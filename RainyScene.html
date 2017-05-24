@@ -14,11 +14,15 @@
 <script src="libs/THREEx.FullScreen.js"></script>
 <script src="libs/THREEx.WindowResize.js"></script>
 
+<script src="js/ParticlesEngine.js"></script>
+<script src="js/ParticlesEngineExamples.js"></script>
+
 <div id="ThreeJS" style="position: absolute; left:0px; top:0px"></div>
 
 <script>
 
 var scene, camera, renderer, container;
+var clock = new THREE.Clock();
 
 init()
 animate()
@@ -83,6 +87,10 @@ function init(){
 	floor.position.y = -10.5;
 	floor.rotation.x = Math.PI / 2;
 	scene.add(floor);
+	
+	this.engine = new ParticlesEngine();
+	engine.setValues(Examples.rain);
+	engine.initialize();
 }
 
 function animate(){
@@ -98,6 +106,9 @@ function render() {
 function update(){
 	controls.update();
 	stats.update();
+	
+	var dt = clock.getDelta();
+	engine.update( dt * 0.5 );	
 }
 
 </script>
