@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<title>Rainy scene</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+</head>
+<body>
+
+<script src="libs/three.js"></script>
+<script src="libs/Detector.js"></script>
+<script src="libs/Stats.js"></script>
+<script src="libs/OrbitControls.js"></script>
+<script src="libs/THREEx.FullScreen.js"></script>
+<script src="libs/THREEx.WindowResize.js"></script>
+
+<div id="ThreeJS" style="position: absolute; left:0px; top:0px"></div>
+
+<script>
+
+var scene, camera, renderer, container;
+
+init()
+animate()
+
+function init(){
+	// create scene
+	scene = new THREE.Scene();
+	
+	// set camera
+	var SCREEN_WIDTH = window.innerWidth;
+	var SCREEN_HEIGHT = window.innerHeight;
+	var VIEW_ANGLE = 45;
+	var ASPECT = SCREEN_WIDTH / SCREEN_HEIGHT
+	var NEAR = 2;
+	var FAR = 5000;
+	camera = new THREE.PerspectiveCamera(VIEW_ANGLE, ASPECT, NEAR, FAR);
+	scene.add(camera);
+	camera.position.set(0, 200, 400);
+	camera.lookAt(scene.position);
+	
+	// set renderer
+	// Check whether the browser supports WebGL. 
+	if(Detector.webgl){
+		renderer = new THREE.WebGLRenderer({antialias:true});
+	// If its not supported, 
+	} 
+	else {
+		renderer = new THREE.CanvasRenderer();
+	}
+	renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
+	container = document.getElementById('ThreeJS');
+	container.appendChild(renderer.domElement);
+	
+	// window resizing
+	THREEx.WindowResize(renderer, camera);
+	
+	// set key for entering full screen - f
+	THREEx.FullScreen.bindKey({charCode: 'f'.charCodeAt(0)});
+	
+	// set controls so we can rotate scene
+	controls = new THREE.OrbitControls(camera, renderer.domElement);
+	
+	// add stats
+	stats = new Stats();
+	stats.domElement.style.position = 'absolute';
+	stats.domElement.style.top = '0px';
+	stats.domElement.style.zIndex = 100;
+	container.appendChild(stats.domElement);
+	
+	// add light
+	var light = new THREE.PointLight(0xFFFFFF);
+	light.position.set(0, 250, 0);
+	scene.add(light);
+	
+	// add floor - just for now, later can be replaced with skyBox
+	var floorTexture = new THREE.ImageUtils.loadTexture( 'checkerboard.jpg' );
+	floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping; 
+	floorTexture.repeat.set( 10, 10 );
+	var floorMaterial = new THREE.MeshBasicMaterial( { color: 0x444444, map: floorTexture, side: THREE.DoubleSide } );
+	var floorGeometry = new THREE.PlaneGeometry(1000, 1000, 10, 10);
+	var floor = new THREE.Mesh(floorGeometry, floorMaterial);
+	floor.position.y = -10.5;
+	floor.rotation.x = Math.PI / 2;
+	scene.add(floor);
+}
+
+function animate(){
+	requestAnimationFrame(animate);
+	render();
+	update();
+}
+
+function render() {
+	renderer.render( scene, camera );
+}
+
+function update(){
+	controls.update();
+	stats.update();
+}
+
+</script>
+</body>
+</html>
