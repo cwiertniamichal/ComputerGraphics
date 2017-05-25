@@ -16,6 +16,10 @@
 
 <script src="js/ParticlesEngine.js"></script>
 <script src="js/ParticlesEngineExamples.js"></script>
+<script src="js/Shaders.js"></script>
+<script src="js/Particle.js"></script>
+
+<script type='text/javascript' src='js/DAT.GUI.min.js'></script>
 
 <div id="ThreeJS" style="position: absolute; left:0px; top:0px"></div>
 
@@ -78,7 +82,7 @@ function init(){
 	scene.add(light);
 	
 	// add floor - just for now, later can be replaced with skyBox
-	var floorTexture = new THREE.ImageUtils.loadTexture( 'checkerboard.jpg' );
+	var floorTexture = new THREE.ImageUtils.loadTexture('images/checkerboard.jpg');
 	floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping; 
 	floorTexture.repeat.set( 10, 10 );
 	var floorMaterial = new THREE.MeshBasicMaterial( { color: 0x444444, map: floorTexture, side: THREE.DoubleSide } );
@@ -89,8 +93,20 @@ function init(){
 	scene.add(floor);
 	
 	this.engine = new ParticlesEngine();
-	engine.setValues(Examples.rain);
+	engine.setParameters(Examples.rain);
 	engine.initialize();
+	
+	gui = new dat.GUI();
+	
+	parameters = {
+		particlesNumber: 50
+	}
+	
+	var particlesNumber = gui.add(parameters, 'particlesNumber').name('Number of particles').min(1).max(100).step(1).listen();
+	particlesNumber.onChange(function (value) {
+		Examples.rain.particlesPerSecond = value;
+		restartEngine(Examples.rain);
+	});
 }
 
 function animate(){
@@ -108,7 +124,17 @@ function update(){
 	stats.update();
 	
 	var dt = clock.getDelta();
-	engine.update( dt * 0.5 );	
+	engine.update(dt * 0.5);	
+}
+
+function restartEngine(parameters)
+{
+	// resetCamera();
+	
+	engine.destroy();
+	engine = new ParticlesEngine();
+	engine.setParameters( parameters );
+	engine.initialize();
 }
 
 </script>

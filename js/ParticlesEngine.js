@@ -1,89 +1,6 @@
-// shaders
-
-particleVertexShader = [
-"attribute vec3 color;",
-"attribute float opacity;",
-"attribute float size;",
-"attribute float angle;",
-"attribute float visible;",
-"varying vec4 vColor;",
-"varying float vAngle;",
-"void main(){",
-	
-	// set visibility of particle
-	"if (visible > 0.5)",
-		"vColor = vec4(color, opacity);",
-	"else",
-		"vColor = vec4(0.0, 0.0, 0.0, 0.0);",
-	
-	"vAngle = angle;",
-	
-	"vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);",
-	"gl_PointSize = size * (300.0 / length(mvPosition.xyz));",
-	"gl_Position = projectionMatrix * mvPosition;",
-"}"
-].join("\n");
-
-particleFragmentShader =
-[
-"uniform sampler2D texture;",
-"varying vec4 vColor;", 	
-"varying float vAngle;",   
-"void main(){", 
-	"gl_FragColor = vColor;",
-	
-	"float c = cos(vAngle);",
-	"float s = sin(vAngle);",
-	"vec2 rotatedUV = vec2(c * (gl_PointCoord.x - 0.5) + s * (gl_PointCoord.y - 0.5) + 0.5,", 
-	                      "c * (gl_PointCoord.y - 0.5) - s * (gl_PointCoord.x - 0.5) + 0.5);",  
-    	"vec4 rotatedTexture = texture2D( texture,  rotatedUV );",
-	"gl_FragColor = gl_FragColor * rotatedTexture;",   
-"}"
-].join("\n");
-
-
-
-
-// Particle class - in js we can define class like this 
-function Particle(){
-	this.position = new THREE.Vector3();
-	this.velocity = new THREE.Vector3();
-	this.acceleration = new THREE.Vector3();
-	
-	this.angle             = 0;
-	this.angleVelocity     = 0; // degrees per second
-	this.angleAcceleration = 0; // degrees per second, per second
-	
-	this.size = 16.0;
-	
-	this.color = new THREE.Color();
-	this.opacity = 1.0;
-	
-	this.age = 0;
-	this.alive = 0;
-}
-
-// to add function to class we can do the following
-Particle.prototype.update = function(dt){
-	// first update position (s = v * t)
-	this.position.add(this.velocity.clone().multiplyScalar(dt));
-	
-	// then update velocity (v = a * t)
-	this.velocity.add(this.acceleration.clone().multiplyScalar(dt));
-	
-	// TODO: what for?
-	// convert from degrees to radians: 0.01745329251 = Math.PI/180
-	this.angle         += this.angleVelocity     * 0.01745329251 * dt;
-	this.angleVelocity += this.angleAcceleration * 0.01745329251 * dt;
-	
-	// update particle's age
-	this.age += dt;
-	
-}
-
-/////////////////////////////////////////////////////////////
-////////////// Particles engine /////////////////////////////
-/////////////////////////////////////////////////////////////
+/*********************************************/
+/********* PARTICLES ENGINE CLASS ************/
+/*********************************************/
 
 function ParticlesEngine(){	
 	// used to calculate start position for particle
@@ -127,7 +44,7 @@ function ParticlesEngine(){
 	this.blendStyle = THREE.NormalBlending; // false;
 
 	this.particleArray = [];
-	this.particlesPerSecond = 100;
+	this.particlesPerSecond = 1;
 	this.particleDeathAge = 1.0;
 	
 	////////////////////////
@@ -136,10 +53,12 @@ function ParticlesEngine(){
 	
 	this.emitterAge = 0.0;
 	this.emitterAlive = true;
-	this.emitterDeathAge = 60; // time (seconds) at which to stop creating particles.
+	
+	// it doesn't work or i don't get it
+	this.emitterDeathAge = 1; // time (seconds) at which to stop creating particles.
 	
 	// How many particles could be active at any time?
-	this.particleCount = this.particlesPerSecond * Math.min( this.particleDeathAge, this.emitterDeathAge );
+	this.particleCount = this.particlesPerSecond * Math.min(this.particleDeathAge, this.emitterDeathAge);
 
 	//////////////
 	// THREE.JS //
@@ -170,7 +89,91 @@ function ParticlesEngine(){
 	this.particleMesh = new THREE.Mesh();
 }
 
-ParticlesEngine.prototype.setValues = function( parameters ) {
+/***************************************************/
+/*********** RANDOM VECTOR3 FUNCTION ***************/
+/***************************************************/
+
+ParticlesEngine.prototype.randomVector3 = function(base, spread){
+	// Math.random() returns a random number between 0 (inclusive) and 1 (exclusive)
+	var rand3 = new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5);
+	var translationVector = new THREE.Vector3().multiplyVectors(spread, rand3);
+	return new THREE.Vector3().addVectors(base, translationVector);
+}
+
+/***************************************************/
+/*********** RANDOM VALUE FUNCTION *****************/
+/***************************************************/
+
+ParticlesEngine.prototype.randomValue = function(base, spread){
+	return base + spread * (Math.random() - 0.5);
+}
+
+/***************************************************/
+/********* CREATE NEW PARTICLE FUNCTION ************/
+/***************************************************/
+
+ParticlesEngine.prototype.createParticle = function() {
+	var particle = new Particle();
+
+	// set start position for particle
+	particle.position = this.randomVector3(this.positionBase, this.positionSpread); 
+
+	// set start velocity for particle
+	particle.velocity = this.randomVector3(this.velocityBase, this.velocitySpread); 
+
+	// set acceleration for particle
+	particle.acceleration = this.randomVector3(this.accelerationBase, this.accelerationSpread); 
+
+	particle.angle = this.randomValue(this.angleBase, this.angleSpread);
+	particle.angleVelocity = this.randomValue(this.angleVelocityBase, this.angleVelocitySpread );
+	particle.angleAcceleration = this.randomValue(this.angleAccelerationBase, this.angleAccelerationSpread);
+
+	particle.size = this.randomValue(this.sizeBase, this.sizeSpread);
+
+	var color = this.randomVector3(this.colorBase, this.colorSpread);
+	particle.color = new THREE.Color().setHSL(color.x, color.y, color.z);
+	
+	particle.opacity = this.randomValue(this.opacityBase, this.opacitySpread);
+
+	particle.age   = 0;
+	// particles initialize as inactive
+	// if we activate all particles at once we get waves of particles
+	particle.alive = 1; 
+	
+	return particle;
+}
+
+
+/************************************************/
+/********* PARTICLES ENGINE INIT FUN ************/
+/************************************************/
+
+ParticlesEngine.prototype.initialize = function() {
+	// link particle data with geometry/material data
+	for(var i = 0; i < this.particleCount; i++){
+		this.particleArray[i] = this.createParticle();
+		this.particleGeometry.vertices[i] = this.particleArray[i].position;
+		this.particleMaterial.attributes.visible.value[i] = this.particleArray[i].alive;
+		this.particleMaterial.attributes.color.value[i] = this.particleArray[i].color;
+		this.particleMaterial.attributes.opacity.value[i] = this.particleArray[i].opacity;
+		this.particleMaterial.attributes.size.value[i] = this.particleArray[i].size;
+		this.particleMaterial.attributes.angle.value[i] = this.particleArray[i].angle;
+	}
+	
+	this.particleMaterial.blending = this.blendStyle;
+
+	this.particleMesh = new THREE.ParticleSystem(this.particleGeometry, this.particleMaterial);
+	this.particleMesh.dynamic = true;
+	this.particleMesh.sortParticles = true;
+	scene.add(this.particleMesh);
+}
+
+
+/******************************************************/
+/********* SET PARTICLES ENGINE PARAMETERS ************/
+/******************************************************/
+
+ParticlesEngine.prototype.setParameters = function(parameters){
 	if(parameters === undefined) 
 		return;
 	
@@ -216,75 +219,15 @@ ParticlesEngine.prototype.setValues = function( parameters ) {
 	this.particleMesh = new THREE.ParticleSystem();
 }
 
-
 ParticlesEngine.prototype.destroy = function()
 {
     scene.remove( this.particleMesh );
 }
 
-ParticlesEngine.prototype.randomVector3 = function(base, spread){
-	// Math.random() returns a random number between 0 (inclusive) and 1 (exclusive)
-	var rand3 = new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5);
-	var translationVector = new THREE.Vector3().multiplyVectors(spread, rand3);
-	return new THREE.Vector3().addVectors(base, translationVector);
-}
-
-ParticlesEngine.prototype.randomValue = function(base, spread){
-	return base + spread * (Math.random() - 0.5);
-}
-
-ParticlesEngine.prototype.createParticle = function() {
-	var particle = new Particle();
-
-	// set start position for particle
-	particle.position = this.randomVector3(this.positionBase, this.positionSpread); 
-
-	// set start velocity for particle
-	particle.velocity = this.randomVector3(this.velocityBase, this.velocitySpread); 
-
-	// set acceleration for particle
-	particle.acceleration = this.randomVector3(this.accelerationBase, this.accelerationSpread); 
-
-	particle.angle = this.randomValue(this.angleBase, this.angleSpread);
-	particle.angleVelocity = this.randomValue(this.angleVelocityBase, this.angleVelocitySpread );
-	particle.angleAcceleration = this.randomValue(this.angleAccelerationBase, this.angleAccelerationSpread);
-
-	particle.size = this.randomValue(this.sizeBase, this.sizeSpread);
-
-	var color = this.randomVector3(this.colorBase, this.colorSpread);
-	particle.color = new THREE.Color().setHSL(color.x, color.y, color.z);
-	
-	particle.opacity = this.randomValue(this.opacityBase, this.opacitySpread);
-
-	particle.age   = 0;
-	particle.alive = 0; // particles initialize as inactive
-	
-	return particle;
-}
-
-ParticlesEngine.prototype.initialize = function() {
-	// link particle data with geometry/material data
-	for (var i = 0; i < this.particleCount; i++){
-		this.particleArray[i] = this.createParticle();
-		this.particleGeometry.vertices[i] = this.particleArray[i].position;
-		this.particleMaterial.attributes.visible.value[i] = this.particleArray[i].alive;
-		this.particleMaterial.attributes.color.value[i] = this.particleArray[i].color;
-		this.particleMaterial.attributes.opacity.value[i] = this.particleArray[i].opacity;
-		this.particleMaterial.attributes.size.value[i] = this.particleArray[i].size;
-		this.particleMaterial.attributes.angle.value[i] = this.particleArray[i].angle;
-	}
-	
-	this.particleMaterial.blending = this.blendStyle;
-	if (this.blendStyle != THREE.NormalBlending) 
-		this.particleMaterial.depthTest = false;
-	
-	this.particleMesh = new THREE.ParticleSystem(this.particleGeometry, this.particleMaterial);
-	this.particleMesh.dynamic = true;
-	this.particleMesh.sortParticles = true;
-	scene.add(this.particleMesh);
-}
-
-ParticlesEngine.prototype.update = function(dt) {
+/******************************************************/
+/************ UPDATE PARTICLES ENGINE *****************/
+/******************************************************/
+ParticlesEngine.prototype.update = function(dt){
 	var recycleIndices = [];
 	
 	// update particle data
