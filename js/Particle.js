@@ -2,7 +2,7 @@
 /********* PARTICLE CLASS ************/
 /*************************************/
 
-function Particle(){
+function Particle(sizeModifier, colorModifier, opacityModifier){
 	this.position = new THREE.Vector3();
 	this.velocity = new THREE.Vector3();
 	this.acceleration = new THREE.Vector3();
@@ -18,6 +18,10 @@ function Particle(){
 	
 	this.age = 0;
 	this.alive = 0;
+	
+	this.sizeModifier = sizeModifier;
+	this.colorModifier = colorModifier;
+	this.opacityModifier = opacityModifier;
 }
 
 
@@ -40,6 +44,15 @@ Particle.prototype.update = function(dt){
 	// update particle's age
 	this.age += dt;
 	
-	// for now i don't implement tween cause i have to think if we need that
+	if(this.sizeModifier.times.length > 0)
+		this.size = this.sizeModifier.lerp(this.age);
+				
+	if(this.colorModifier.times.length > 0){
+		var colorHSL = this.colorModifier.lerp( this.age );
+		this.color = new THREE.Color().setHSL( colorHSL.x, colorHSL.y, colorHSL.z );
+	}
+	
+	if(this.opacityModifier.times.length > 0)
+		this.opacity = this.opacityModifier.lerp( this.age );
 	
 }

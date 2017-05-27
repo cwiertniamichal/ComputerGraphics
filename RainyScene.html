@@ -25,13 +25,23 @@
 <script src="libs/THREEx.FullScreen.js"></script>
 <script src="libs/THREEx.WindowResize.js"></script>
 
+<script src="js/Modifier.js"></script>
 <script src="js/ParticlesEngine.js"></script>
 <script src="js/ParticlesEngineExamples.js"></script>
 <script src="js/Shaders.js"></script>
 <script src="js/Particle.js"></script>
 
-<script src="js/jquery-1.9.1.js"></script>
-<script src="js/jquery-ui.js"></script>
+
+<!-- Code to display an information button and box when clicked. -->
+<script src="http://code.jquery.com/jquery-1.9.1.js"></script>
+<script src="http://code.jquery.com/ui/1.10.2/jquery-ui.js"></script>
+<link rel=stylesheet href="http://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css" />
+<link rel=stylesheet href="css/info.css"/>
+<script src="js/info.js"></script>
+<div id="infoButton"></div>
+<div id="infoBox" title="Project information">
+Rainy scene using Particle system by Karolina Mura and Michał Ćwiertnia
+</div>
 
 <script type='text/javascript' src='js/DAT.GUI.min.js'></script>
 
@@ -60,7 +70,7 @@ function init(){
 	var FAR = 5000;
 	camera = new THREE.PerspectiveCamera(VIEW_ANGLE, ASPECT, NEAR, FAR);
 	scene.add(camera);
-	camera.position.set(0, 200, 400);
+	camera.position.set(0, 200, 600);
 	camera.lookAt(scene.position);
 	
 	// set renderer
@@ -88,7 +98,7 @@ function init(){
 	// add stats
 	stats = new Stats();
 	stats.domElement.style.position = 'absolute';
-	stats.domElement.style.top = '0px';
+	stats.domElement.style.bottom = '0px';
 	stats.domElement.style.zIndex = 100;
 	container.appendChild(stats.domElement);
 	
@@ -111,13 +121,15 @@ function init(){
 	rainEngines = new Array();
 	cloudEngines = [];
 	
+	this.cloudParameters = new Clouds();
 	var cloudEngine = new ParticlesEngine();
-	cloudEngine.setParameters(Examples.clouds);
+	cloudEngine.setParameters(cloudParameters);
 	cloudEngine.initialize();
 	cloudEngines.push(cloudEngine);
 	
+	this.rainParameters = new Rain();
 	var engine = new ParticlesEngine();
-	engine.setParameters(Examples.rain);
+	engine.setParameters(rainParameters);
 	engine.initialize();
 	rainEngines.push(engine);
 	
@@ -137,8 +149,10 @@ function init(){
 		cloudSize: 80.0,
 		cloudVelocityX: 40,
 		cloudVelocityZ: 0,
+		cloudColorChange: true,
 		windSpeedX: 0.0,
-		windSpeedZ: 0.0
+		windSpeedZ: 0.0,
+		reset: function() { reset() }
 	};
 	
 	var dir1 = gui.addFolder('Rain');
@@ -147,16 +161,16 @@ function init(){
 	var rainVelocity = dir1.add(parameters, 'rainVelocity').min(100).max(800).step(50).name('Velocity').listen();
 	
 	rainParticlesNumber.onChange(function (value) {
-		Examples.rain.particlesPerSecond = value;
+		rainParameters.particlesPerSecond = value;
 		rainEngines.last().emitterAlive = false; 
 		var newEngine = new ParticlesEngine();
-		newEngine.setParameters(Examples.rain);
+		newEngine.setParameters(rainParameters);
 		newEngine.initialize();
 		rainEngines.push(newEngine);
 	});
 	
 	rainSize.onChange(function (value) {
-		Examples.rain.sizeBase = value;
+		rainParameters.sizeBase = value;
 		rainEngines.last().sizeBase = value;
 		for(var i = 0; i < rainEngines.last().particleArray.length; i++){
 			if(rainEngines.last().particleArray[i].alive == 0.0)
@@ -165,7 +179,7 @@ function init(){
 	});
 	
 	rainVelocity.onChange(function (value) {
-		Examples.rain.velocityBase.y = -value;
+		rainParameters.velocityBase.y = -value;
 		rainEngines.last().velocityBase = new THREE.Vector3(rainEngines.last().wind.x, -value, rainEngines.last().wind.z);
 		for(var i = 0; i < rainEngines.last().particleArray.length; i++){
 			if(rainEngines.last().particleArray[i].alive == 0.0)
@@ -178,22 +192,19 @@ function init(){
 	var cloudSize = dir2.add(parameters, 'cloudSize').min(40.0).max(120.0).step(10.0).name('Size').listen();
 	var cloudVelocityX = dir2.add(parameters, 'cloudVelocityX').min(20).max(80).step(5).name('Velocity X').listen();
 	var cloudVelocityZ = dir2.add(parameters, 'cloudVelocityZ').min(-80).max(80).step(10).name('Velocity Z').listen();
+	var cloudColorChange = dir2.add(parameters, 'cloudColorChange').name("Color change").listen()
 	
 	cloudsParticlesNumber.onChange(function (value) {
-		Examples.clouds.particlesPerSecond = value;
+		cloudParameters.particlesPerSecond = value;
 		cloudEngines.last().emitterAlive = false; 
-		// for(var i = 0; i < cloudEngines.last().particleArray.length; i++){
-		//	if(cloudEngines.last().particleArray[i].alive == 0.0)
-		//		cloudEngines.last().particleArray[i].size = cloudEngines.last().randomValue(value, cloudEngines.last().sizeSpread);
-		// }
 		var newEngine = new ParticlesEngine();
-		newEngine.setParameters(Examples.clouds);
+		newEngine.setParameters(cloudParameters);
 		newEngine.initialize();
 		cloudEngines.push(newEngine);
 	});
 	
 	cloudSize.onChange(function (value) {
-		Examples.clouds.sizeBase = value;
+		cloudParameters.sizeBase = value;
 		cloudEngines.last().sizeBase = value;
 		for(var i = 0; i < cloudEngines.last().particleArray.length; i++){
 			if(cloudEngines.last().particleArray[i].alive == 0.0)
@@ -202,7 +213,7 @@ function init(){
 	});
 	
 	cloudVelocityX.onChange(function (value) {
-		Examples.clouds.velocityBase.x = value;
+		cloudParameters.velocityBase.x = value;
 		cloudEngines.last().velocityBase = new THREE.Vector3(value, cloudEngines.last().velocityBase.y, cloudEngines.last().velocityBase.z);
 		for(var i = 0; i < cloudEngines.last().particleArray.length; i++){
 			cloudEngines.last().particleArray[i].velocity = cloudEngines.last().randomVector3(new THREE.Vector3(value, cloudEngines.last().velocityBase.y, cloudEngines.last().velocityBase.z), cloudEngines.last().velocitySpread);
@@ -210,10 +221,31 @@ function init(){
 	});
 	
 	cloudVelocityZ.onChange(function (value) {
-		Examples.clouds.velocityBase.z = value;
+		cloudParameters.velocityBase.z = value;
 		cloudEngines.last().velocityBase = new THREE.Vector3(cloudEngines.last().velocityBase.x, cloudEngines.last().velocityBase.y, value);
 		for(var i = 0; i < cloudEngines.last().particleArray.length; i++){
 			cloudEngines.last().particleArray[i].velocity = cloudEngines.last().randomVector3(new THREE.Vector3(cloudEngines.last().velocityBase.x, cloudEngines.last().velocityBase.y, value), cloudEngines.last().velocitySpread);
+		}
+	});
+	
+	cloudColorChange.onChange(function (value) {
+		if(value == false){
+			modifier = new Modifier();
+			cloudParameters.colorModifier = modifier;
+			cloudEngines.last().colorModifier = modifier;
+			for(var i = 0; i < cloudEngines.last().particleArray.length; i++){
+				if(cloudEngines.last().particleArray[i].alive == 0.0)
+					cloudEngines.last().particleArray[i].colorModifier = modifier;
+			}
+		}
+		else{
+			modifier = new Modifier([2, 5, 10], [new THREE.Vector3(0.0,0.0,0.5), new THREE.Vector3(0.0,0.0,0.4), new THREE.Vector3(0.0, 0.0, 0.3)]);
+			cloudParameters.colorModifier = modifier;
+			cloudEngines.last().colorModifier = modifier;
+			for(var i = 0; i < cloudEngines.last().particleArray.length; i++){
+				if(cloudEngines.last().particleArray[i].alive == 0.0)
+					cloudEngines.last().particleArray[i].colorModifier = modifier;
+			}
 		}
 	});
 	
@@ -222,20 +254,24 @@ function init(){
 	var windSpeedZ = dir3.add(parameters, 'windSpeedZ').min(-400.0).max(400.0).step(10.0).name("Wind Speed Z").listen();
 	
 	windSpeedX.onChange(function (value) {
-		var wind = new THREE.Vector3(value, 0.0, 0.0);
-		rainEngines.last().wind = new THREE.Vector3(wind.x, rainEngines.last().wind.y, rainEngines.last().wind.z);
+		var wind = new THREE.Vector3(value, rainEngines.last().wind.y, rainEngines.last().wind.z);
+		rainParameters.wind = new THREE.Vector3(wind.x, wind.y, wind.z);
+		rainEngines.last().wind = new THREE.Vector3(wind.x, wind.y, wind.z);
 		for(var i = 0; i < rainEngines.last().particleArray.length; i++){
 			rainEngines.last().particleArray[i].velocity = new THREE.Vector3(wind.x, rainEngines.last().particleArray[i].velocity.y, rainEngines.last().particleArray[i].velocity.z);
 		}
 	});
 	
 	windSpeedZ.onChange(function (value) {
-		var wind = new THREE.Vector3(0.0, 0.0, value);
-		rainEngines.last().wind = new THREE.Vector3(rainEngines.last().wind.x, rainEngines.last().wind.y, wind.z);
+		var wind = new THREE.Vector3(rainEngines.last().wind.x, rainEngines.last().wind.y, value);
+		rainParameters.wind = new THREE.Vector3(wind.x, wind.y, wind.z);
+		rainEngines.last().wind = new THREE.Vector3(wind.x, wind.y, wind.z);
 		for(var i = 0; i < rainEngines.last().particleArray.length; i++){
 			rainEngines.last().particleArray[i].velocity = new THREE.Vector3(rainEngines.last().particleArray[i].velocity.x, rainEngines.last().particleArray[i].velocity.y, wind.z);
 		}
 	});
+	
+	gui.add(parameters, 'reset').name("Reset scene");
 }
 
 function animate(){
@@ -253,16 +289,11 @@ function update(){
 	stats.update();
 		
 	var dt = clock.getDelta();
-	//engine.update(dt * 0.5, cloudEngine);	
 	for(var i = 0; i < rainEngines.length; i++){
-		//window.alert('here');
-		//window.alert(rainEngines.lenght);
 		rainEngines[i].update(dt * 0.5, cloudEngines.last());
 	}
 	
-
-	for(var i = 0; i < cloudEngines.length; i++){
-		//window.alert('here');
+	for(var i =  cloudEngines.length - 1; i >= 0; i--){
 		cloudEngines[i].update(dt * 0.5, null);
 	}
 }
@@ -283,6 +314,39 @@ function restartCloudEngine(parameters){
 	cloudEngine = new ParticlesEngine();
 	cloudEngine.setParameters( parameters );
 	cloudEngine.initialize();
+}
+
+function reset(){
+	for(var i = 0; i < rainEngines.length; i++){
+		rainEngines[i].destroy();
+	}
+	
+	for(var i =  cloudEngines.length - 1; i >= 0; i--){
+		cloudEngines[i].destroy();
+	}
+	
+	var cloudEngine = new ParticlesEngine();
+	cloudParameters = new Clouds();
+	cloudEngine.setParameters(cloudParameters);
+	cloudEngine.initialize();
+	cloudEngines.push(cloudEngine);
+	
+	var engine = new ParticlesEngine();
+	rainParameters = new Rain();
+	engine.setParameters(rainParameters);
+	engine.initialize();
+	rainEngines.push(engine);
+	
+	parameters.rainParticlesNumber = 50;
+	parameters.rainSize = 8.0;
+	parameters.rainVelocity = 400;
+	parameters.cloudsParticlesNumber = 100;
+	parameters.cloudSize = 80.0;
+	parameters.cloudVelocityX = 40;
+	parameters.cloudVelocityZ = 0;
+	parameters.cloudColorChange = true;
+	parameters.windSpeedX = 0.0;
+	parameters.windSpeedZ = 0.0;
 }
 
 </script>

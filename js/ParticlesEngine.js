@@ -29,19 +29,19 @@ function ParticlesEngine(){
 	this.sizeBase = 0.0;
 	this.sizeSpread = 0.0;
 	
-	// this.sizeTween = new Tween();
+	this.sizeModifier = new Modifier();
 			
 	// store colors in HSL format in a THREE.Vector3 object
 	// http://en.wikipedia.org/wiki/HSL_and_HSV
 	// analogously as above
 	this.colorBase = new THREE.Vector3(0.0, 1.0, 0.5); 
 	this.colorSpread = new THREE.Vector3(0.0, 0.0, 0.0);
-	// this.colorTween = new Tween();
+	this.colorModifier = new Modifier();
 	
 	// analogously as above
 	this.opacityBase = 1.0;
 	this.opacitySpread = 0.0;
-	// this.opacityTween = new Tween();
+	this.opacityModifier = new Modifier();
 
 	this.blendStyle = THREE.NormalBlending; // false;
 
@@ -57,7 +57,6 @@ function ParticlesEngine(){
 	this.emitterAlive = true;
 	
 	// ok it works but do we want it anyway?
-
 	this.emitterDeathAge = 1; // time (seconds) at which to stop creating particles.
 	
 	// How many particles could be active at any time?
@@ -75,17 +74,10 @@ function ParticlesEngine(){
 		{
 			texture:   { type: "t", value: this.particleTexture },
 		},
-		attributes:     
-		{
-			visible:	{ type: 'f',  value: [] },
-			angle:	{ type: 'f',  value: [] },
-			size:		{ type: 'f',  value: [] },
-			color:	{ type: 'c',  value: [] },
-			opacity:	{ type: 'f',  value: [] }
-		},
 		vertexShader:   particleVertexShader,
 		fragmentShader: particleFragmentShader,
 		transparent: true, // alphaTest: 0.5,  // if having transparency issues, try including: alphaTest: 0.5, 
+		alphaTest: 1.0,
 		blending: THREE.NormalBlending, depthTest: true,
 		
 	});
@@ -116,7 +108,7 @@ ParticlesEngine.prototype.randomValue = function(base, spread){
 /***************************************************/
 
 ParticlesEngine.prototype.createParticle = function() {
-	var particle = new Particle();
+	var particle = new Particle(this.sizeModifier, this.colorModifier, this.opacityModifier);
 
 	// set start position for particle
 	
@@ -156,7 +148,7 @@ ParticlesEngine.prototype.createParticle = function() {
 ParticlesEngine.prototype.initialize = function() {
 	// link particle data with geometry/material data
 	for(var i = 0; i < this.particleCount; i++){
-		this.particleArray[i] = this.createParticle();
+		this.particleArray[i] = this.createParticle(this.sizeModifier, this.colorModifier, this.opacityModifier);
 		this.particleGeometry.vertices[i] = this.particleArray[i].position;
 		this.particleMaterial.attributes.visible.value[i] = this.particleArray[i].alive;
 		this.particleMaterial.attributes.color.value[i] = this.particleArray[i].color;
@@ -181,19 +173,9 @@ ParticlesEngine.prototype.initialize = function() {
 ParticlesEngine.prototype.setParameters = function(parameters){
 	if(parameters === undefined) 
 		return;
-	
-	// clear any previous tweens that might exist
-	//this.sizeTween    = new Tween();
-	//this.colorTween   = new Tween();
-	//this.opacityTween = new Tween();
-	
+
 	for(var key in parameters) 
 		this[key] = parameters[key];
-	
-	// attach tweens to particles
-	//Particle.prototype.sizeTween    = this.sizeTween;
-	//Particle.prototype.colorTween   = this.colorTween;
-	//Particle.prototype.opacityTween = this.opacityTween;	
 	
 	// calculate/set derived particle engine values
 	this.particleArray = [];
@@ -296,13 +278,13 @@ ParticlesEngine.prototype.update = function(dt, engine){
 	for(var j = 0; j < recycleIndices.length; j++){
 		var i = recycleIndices[j];
 		if(engine != null){
-			this.particleArray[i] = this.createParticle();
+			this.particleArray[i] = this.createParticle(this.sizeModifier, this.colorModifier, this.opacityModifier);
 			this.particleArray[i].position = this.randomVector3(this.positionBase, new THREE.Vector3(0, 0, 0));
 			this.particleArray[i].alive = 1.0;		
 			this.particleGeometry.vertices[i] = this.particleArray[i].position;
 		}
 		else{
-			this.particleArray[i] = this.createParticle();
+			this.particleArray[i] = this.createParticle(this.sizeModifier, this.colorModifier, this.opacityModifier);
 			this.particleArray[i].alive = 1.0; // activate right away
 			this.particleGeometry.vertices[i] = this.particleArray[i].position;
 		}
