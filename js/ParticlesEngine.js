@@ -234,7 +234,7 @@ ParticlesEngine.prototype.destroy = function()
 /******************************************************/
 ParticlesEngine.prototype.update = function(dt, engine){
 	var recycleIndices = [];
-	
+
 	// update particle data
 	for(var i = 0; i < this.particleCount; i++){
 		if(this.particleArray[i].alive){
@@ -295,9 +295,17 @@ ParticlesEngine.prototype.update = function(dt, engine){
 	// if any particles have died while the emitter is still running, we imediately recycle them
 	for(var j = 0; j < recycleIndices.length; j++){
 		var i = recycleIndices[j];
-		this.particleArray[i] = this.createParticle();
-		this.particleArray[i].alive = 1.0; // activate right away
-		this.particleGeometry.vertices[i] = this.particleArray[i].position;
+		if(engine != null){
+			this.particleArray[i] = this.createParticle();
+			this.particleArray[i].position = this.randomVector3(this.positionBase, new THREE.Vector3(0, 0, 0));
+			this.particleArray[i].alive = 1.0;		
+			this.particleGeometry.vertices[i] = this.particleArray[i].position;
+		}
+		else{
+			this.particleArray[i] = this.createParticle();
+			this.particleArray[i].alive = 1.0; // activate right away
+			this.particleGeometry.vertices[i] = this.particleArray[i].position;
+		}
 	}
 
 	// stop emitter?
