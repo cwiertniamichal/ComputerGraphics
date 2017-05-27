@@ -11,6 +11,8 @@ function ParticlesEngine(){
 	this.velocityBase       = new THREE.Vector3();
 	this.velocitySpread     = new THREE.Vector3(); 
 	
+	this.wind = new THREE.Vector3(0.0, 0.0, 0.0);
+	
 	// used to calculate start acc for particle
 	this.accelerationBase   = new THREE.Vector3();
 	this.accelerationSpread = new THREE.Vector3();	
@@ -54,7 +56,8 @@ function ParticlesEngine(){
 	this.emitterAge = 0.0;
 	this.emitterAlive = true;
 	
-	// it doesn't work or i don't get it
+	// ok it works but do we want it anyway?
+
 	this.emitterDeathAge = 1; // time (seconds) at which to stop creating particles.
 	
 	// How many particles could be active at any time?
@@ -116,11 +119,13 @@ ParticlesEngine.prototype.createParticle = function() {
 	var particle = new Particle();
 
 	// set start position for particle
+	
 	particle.position = this.randomVector3(this.positionBase, this.positionSpread); 
 
 	// set start velocity for particle
 	particle.velocity = this.randomVector3(this.velocityBase, this.velocitySpread); 
-
+	particle.velocity = new THREE.Vector3().addVectors(particle.velocity, this.wind);
+	
 	// set acceleration for particle
 	particle.acceleration = this.randomVector3(this.accelerationBase, this.accelerationSpread); 
 
@@ -138,7 +143,7 @@ ParticlesEngine.prototype.createParticle = function() {
 	particle.age   = 0;
 	// particles initialize as inactive
 	// if we activate all particles at once we get waves of particles
-	particle.alive = 1; 
+	particle.alive = 0; 
 	
 	return particle;
 }
@@ -227,7 +232,7 @@ ParticlesEngine.prototype.destroy = function()
 /******************************************************/
 /************ UPDATE PARTICLES ENGINE *****************/
 /******************************************************/
-ParticlesEngine.prototype.update = function(dt){
+ParticlesEngine.prototype.update = function(dt, engine){
 	var recycleIndices = [];
 	
 	// update particle data
@@ -241,13 +246,26 @@ ParticlesEngine.prototype.update = function(dt){
 				recycleIndices.push(i);
 			}
 			
+			if(this.particleArray[i].position.y <= 0){
+				this.particleMaterial.attributes.visible.value[i] = 0.0;
+				// recycleIndices.push(i);
+			}
+			else{
+				this.particleMaterial.attributes.visible.value[i] = 1.0;
+			}
+			
 			// update particle properties in shader
-			this.particleMaterial.attributes.visible.value[i] = this.particleArray[i].alive;
+			
 			this.particleMaterial.attributes.color.value[i] = this.particleArray[i].color;
 			this.particleMaterial.attributes.opacity.value[i] = this.particleArray[i].opacity;
 			this.particleMaterial.attributes.size.value[i] = this.particleArray[i].size;
 			this.particleMaterial.attributes.angle.value[i] = this.particleArray[i].angle;
 		}		
+	}
+	
+	if(engine != null){
+		// window.alert(Math.floor(this.randomValue(0, engine.particleArray.lenght - 1), this.positionSpread));
+		this.positionBase = engine.particleArray[Math.floor((Math.random() * engine.particleArray.length))].position.clone();
 	}
 
 	// check if particle emitter is still running
@@ -262,8 +280,16 @@ ParticlesEngine.prototype.update = function(dt){
 		if(endIndex > this.particleCount) 
 			endIndex = this.particleCount; 
 			  
-		for(var i = startIndex; i < endIndex; i++)
-			this.particleArray[i].alive = 1.0;		
+		for(var i = startIndex; i < endIndex; i++){
+			if(engine != null){
+				this.particleArray[i].position = this.randomVector3(this.positionBase, new THREE.Vector3(0, 0, 0));
+				this.particleArray[i].alive = 1.0;		
+				this.particleGeometry.vertices[i] = this.particleArray[i].position;
+			}
+			else{
+				this.particleArray[i].alive = 1.0;		
+			}
+		}
 	}
 
 	// if any particles have died while the emitter is still running, we imediately recycle them

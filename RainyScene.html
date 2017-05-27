@@ -92,6 +92,10 @@ function init(){
 	floor.rotation.x = Math.PI / 2;
 	scene.add(floor);
 	
+	this.cloudEngine = new ParticlesEngine();
+	cloudEngine.setParameters(Examples.clouds);
+	cloudEngine.initialize();
+	
 	this.engine = new ParticlesEngine();
 	engine.setParameters(Examples.rain);
 	engine.initialize();
@@ -99,13 +103,94 @@ function init(){
 	gui = new dat.GUI();
 	
 	parameters = {
-		particlesNumber: 50
-	}
+		rainParticlesNumber: 50,
+		rainSize: 8.0,
+		rainVelocity: -400,
+		cloudsParticlesNumber: 100,
+		cloudSize: 80.0,
+		cloudVelocity: 40,
+		windSpeedX: 40.0,
+		windSpeedZ: 0.0
+	};
 	
-	var particlesNumber = gui.add(parameters, 'particlesNumber').name('Number of particles').min(1).max(100).step(1).listen();
-	particlesNumber.onChange(function (value) {
+	var dir1 = gui.addFolder('Rain');
+	var rainParticlesNumber = dir1.add(parameters, 'rainParticlesNumber').min(1).max(100).step(1).name('Particles').listen();
+	var rainSize = dir1.add(parameters, 'rainSize').min(4.0).max(12.0).step(0.5).name('Size').listen();
+	var rainVelocity = dir1.add(parameters, 'rainVelocity').min(-600).max(-200).step(-50).name('Velocity').listen();
+	
+	rainParticlesNumber.onChange(function (value) {
 		Examples.rain.particlesPerSecond = value;
-		restartEngine(Examples.rain);
+		restartRainEngine(Examples.rain);
+	});
+	rainSize.onChange(function (value) {
+		Examples.rain.sizeBase = value;
+		engine.sizeBase = value;
+		for(var i = 0; i < engine.particleArray.length; i++){
+			if(engine.particleArray[i].alive == 0.0)
+				engine.particleArray[i].size = engine.randomValue(value, engine.sizeSpread);
+		}
+	});
+	rainVelocity.onChange(function (value) {
+		Examples.rain.velocityBase.y = value;
+		engine.velocityBase = new THREE.Vector3(0.0, value, 0.0);
+		for(var i = 0; i < engine.particleArray.length; i++){
+			if(engine.particleArray[i].alive == 0.0)
+				engine.particleArray[i].velocity = engine.randomVector3(new THREE.Vector3(0.0, value, 0.0), engine.velocitySpread);
+		}
+	});
+	
+	var dir2 = gui.addFolder('Clouds');
+	var cloudsParticlesNumber = dir2.add(parameters, 'cloudsParticlesNumber').min(80).max(120).step(10).name('Particles').listen();
+	var cloudSize = dir2.add(parameters, 'cloudSize').min(60.0).max(100.0).step(5.0).name('Size').listen();
+	var cloudVelocity = dir2.add(parameters, 'cloudVelocity').min(20).max(60).step(5).name('Velocity').listen();
+	
+	cloudsParticlesNumber.onChange(function (value) {
+		Examples.clouds.particlesPerSecond = value;
+		restartCloudEngine(Examples.clouds);
+	});
+	cloudSize.onChange(function (value) {
+		Examples.clouds.sizeBase = value;
+		cloudEngine.sizeBase = value;
+		for(var i = 0; i < cloudEngine.particleArray.length; i++){
+			if(cloudEngine.particleArray[i].alive == 0.0)
+				cloudEngine.particleArray[i].size = cloudEngine.randomValue(value, cloudEngine.sizeSpread);
+		}
+	});
+	cloudVelocity.onChange(function (value) {
+		Examples.clouds.velocityBase.x = value;
+		cloudEngine.velocityBase = new THREE.Vector3(value, 0.0, 0.0);
+		for(var i = 0; i < cloudEngine.particleArray.length; i++){
+			if(cloudEngine.particleArray[i].alive == 0.0)
+				cloudEngine.particleArray[i].velocity = cloudEngine.randomVector3(new THREE.Vector3(value, 0.0, 0.0), cloudEngine.velocitySpread);
+		}
+	});
+	
+	var dir3 = gui.addFolder('Wind');
+	var windSpeedX = dir3.add(parameters, 'windSpeedX').min(-400.0).max(400.0).step(10.0).name("Wind Speed X").listen();
+	var windSpeedZ = dir3.add(parameters, 'windSpeedZ').min(-400.0).max(400.0).step(10.0).name("Wind Speed Z").listen();
+	
+	windSpeedX.onChange(function (value) {
+		var wind = new THREE.Vector3(value, 0.0, 0.0);
+		engine.wind = new THREE.Vector3(wind.x, engine.wind.y, engine.wind.z);
+		cloudEngine.wind = new THREE.Vector3(wind.x/10, cloudEngine.wind.y, cloudEngine.wind.z);;
+		for(var i = 0; i < engine.particleArray.length; i++){
+			engine.particleArray[i].velocity = new THREE.Vector3(wind.x, engine.particleArray[i].velocity.y, engine.particleArray[i].velocity.z);
+		}
+		for(var i = 0; i < cloudEngine.particleArray.length; i++){
+			cloudEngine.particleArray[i].velocity = new THREE.Vector3(wind.x/10, cloudEngine.particleArray[i].velocity.y, cloudEngine.particleArray[i].velocity.z);
+		}
+	});
+	
+	windSpeedZ.onChange(function (value) {
+		var wind = new THREE.Vector3(0.0, 0.0, value);
+		engine.wind = new THREE.Vector3(engine.wind.x, engine.wind.y, wind.z);
+		cloudEngine.wind = new THREE.Vector3(cloudEngine.wind.x, cloudEngine.wind.y, wind.z/10);
+		for(var i = 0; i < engine.particleArray.length; i++){
+			engine.particleArray[i].velocity = new THREE.Vector3(engine.particleArray[i].velocity.x, engine.particleArray[i].velocity.y, wind.z);
+		}
+		for(var i = 0; i < cloudEngine.particleArray.length; i++){
+			cloudEngine.particleArray[i].velocity = new THREE.Vector3(cloudEngine.particleArray[i].velocity.x, cloudEngine.particleArray[i].velocity.y, wind.z/10);
+		}
 	});
 }
 
@@ -124,17 +209,26 @@ function update(){
 	stats.update();
 	
 	var dt = clock.getDelta();
-	engine.update(dt * 0.5);	
+	engine.update(dt * 0.5, cloudEngine);	
+	cloudEngine.update(dt * 0.5, null);
 }
 
-function restartEngine(parameters)
-{
+function restartRainEngine(parameters){
 	// resetCamera();
 	
 	engine.destroy();
 	engine = new ParticlesEngine();
 	engine.setParameters( parameters );
 	engine.initialize();
+}
+
+function restartCloudEngine(parameters){
+	// resetCamera();
+	
+	cloudEngine.destroy();
+	cloudEngine = new ParticlesEngine();
+	cloudEngine.setParameters( parameters );
+	cloudEngine.initialize();
 }
 
 </script>

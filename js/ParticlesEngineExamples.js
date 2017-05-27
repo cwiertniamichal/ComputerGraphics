@@ -3,11 +3,11 @@ Examples =
 	
 	clouds :
 	{
-		positionBase   : new THREE.Vector3( -100, 100,  0 ),
-		positionSpread : new THREE.Vector3(    0,  50, 60 ),
+		positionBase   : new THREE.Vector3( -100, 200,  0 ),
+		positionSpread : new THREE.Vector3(    0,  0, 200 ),
 		
-		velocityBase   : new THREE.Vector3( 40, 0, 0 ),
-		velocitySpread : new THREE.Vector3( 20, 0, 0 ), 
+		velocityBase   : new THREE.Vector3( 0, 0, 0 ),
+		velocitySpread : new THREE.Vector3( 0, 0, 0 ), 
 		
 		particleTexture : THREE.ImageUtils.loadTexture( 'images/smokeparticle.png'),
 
@@ -16,14 +16,16 @@ Examples =
 		colorBase    : new THREE.Vector3(0.0, 0.0, 1.0), // H,S,L
 		//opacityTween : new Tween([0,1,4,5],[0,1,1,0]),
 
-		particlesPerSecond : 50,
+		particlesPerSecond : 100,
 		particleDeathAge   : 10.0,		
-		emitterDeathAge    : 1
+		emitterDeathAge    : 60,
+		
+		wind : new THREE.Vector3(40, 0, 0)
 	},
 	rain :
 	{
 		positionBase     : new THREE.Vector3( 0, 200, 0 ),
-		positionSpread   : new THREE.Vector3( 600, 0, 600 ),
+		positionSpread   : new THREE.Vector3( 200, 0, 200 ),
 
 		velocityBase     : new THREE.Vector3( 0, -400, 0 ),
 		velocitySpread   : new THREE.Vector3( 10, 50, 10 ), 
@@ -38,8 +40,10 @@ Examples =
 		opacityBase : 0.6,
 
 		particlesPerSecond : 10,
-		particleDeathAge   : 1.0,		
-		emitterDeathAge    : 1
+		particleDeathAge   : 10.0,		
+		emitterDeathAge    : 60,
+		
+		wind: new THREE.Vector3(400, 0, 0)
 	}
 	
 }
