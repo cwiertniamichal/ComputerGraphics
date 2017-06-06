@@ -49,7 +49,7 @@ Rainy scene using Particle system by Karolina Mura and Michał Ćwiertnia
 
 <script>
 
-var scene, camera, renderer, container, curentMaterials, boxNr;
+var scene, camera, renderer, container, curentMaterials, boxNr, floor, isFloorVisible;
 var rainEngines = [];
 var cloudEngines = [];
 var clock = new THREE.Clock();
@@ -148,12 +148,13 @@ function init(){
 		scene.add(skyBox);
 
 	// add floor - just for now, later can be replaced with skyBox
+	isFloorVisible = true;
 	var floorTexture = new THREE.ImageUtils.loadTexture('images/checkerboard.jpg');
 	floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping; 
 	floorTexture.repeat.set( 10, 10 );
 	var floorMaterial = new THREE.MeshBasicMaterial( { color: 0x444444, map: floorTexture, side: THREE.DoubleSide } );
-	var floorGeometry = new THREE.PlaneGeometry(100, 100, 10, 10);
-	var floor = new THREE.Mesh(floorGeometry, floorMaterial);
+	var floorGeometry = new THREE.PlaneGeometry(200, 200, 10, 10);
+	floor = new THREE.Mesh(floorGeometry, floorMaterial);
 	floor.position.y = -10.5;
 	floor.rotation.x = Math.PI / 2;
 	scene.add(floor);
@@ -193,7 +194,8 @@ function init(){
 		windSpeedX: 0.0,
 		windSpeedZ: 0.0,
 		currentScene: "lake",
-		reset: function() { reset() }
+		reset: function() { reset() },
+		showHideFloor: function() { showHideFloor() }
 	};
 	
 	var dir1 = gui.addFolder('Rain');
@@ -338,6 +340,8 @@ function init(){
 		skyBox.scale.set(-1,1,1);
 		scene.add(skyBox);
 	});
+
+	gui.add(parameters, 'showHideFloor').name("Show/hide floor");
 }
 
 function animate(){
@@ -414,6 +418,18 @@ function reset(){
 	parameters.windSpeedX = 0.0;
 	parameters.windSpeedZ = 0.0;
 }
+
+function showHideFloor(){
+	if(isFloorVisible){
+		isFloorVisible = false;
+		scene.remove(floor);
+	}
+	else {
+		isFloorVisible = true;
+		scene.add(floor);
+	}
+}
+
 
 </script>
 </body>
