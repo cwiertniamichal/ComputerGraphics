@@ -79,7 +79,7 @@ function init(){
 	var FAR = 200000;
 	camera = new THREE.PerspectiveCamera(VIEW_ANGLE, ASPECT, NEAR, FAR);
 	scene.add(camera);
-	camera.position.set(0, 200, 600);
+	camera.position.set(0, 250, 600);
 	camera.lookAt(scene.position);
 	
 	// set renderer
@@ -126,7 +126,7 @@ function init(){
 	initMaterial("images/back.jpg")];
 		var skyMaterial = new THREE.MeshFaceMaterial(imgMaterials);
 		var skyBox = new THREE.Mesh(new THREE.CubeGeometry(
-			100000, 100000, 100000, 1, 1, 1, null, true), skyMaterial);
+			50000, 50000, 50000, 1, 1, 1, null, true), skyMaterial);
 		skyBox.scale.set(-1,1,1);
 		scene.add(skyBox);
 
@@ -167,7 +167,7 @@ function init(){
 	
 	parameters = {
 		rainParticlesNumber: 50,
-		rainSize: 8.0,
+		rainSize: 4.0,
 		rainVelocity: 400,
 		cloudsParticlesNumber: 100,
 		cloudSize: 80.0,
@@ -181,7 +181,7 @@ function init(){
 	
 	var dir1 = gui.addFolder('Rain');
 	var rainParticlesNumber = dir1.add(parameters, 'rainParticlesNumber').min(1).max(300).step(1).name('Particles').listen();
-	var rainSize = dir1.add(parameters, 'rainSize').min(4.0).max(16.0).step(1.0).name('Size').listen();
+	var rainSize = dir1.add(parameters, 'rainSize').min(2.0).max(16.0).step(1.0).name('Size').listen();
 	var rainVelocity = dir1.add(parameters, 'rainVelocity').min(100).max(800).step(50).name('Velocity').listen();
 	
 	rainParticlesNumber.onChange(function (value) {

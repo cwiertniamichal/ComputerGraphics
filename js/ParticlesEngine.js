@@ -228,7 +228,7 @@ ParticlesEngine.prototype.update = function(dt, engine){
 				recycleIndices.push(i);
 			}
 			
-			if(this.particleArray[i].position.y <= 0){
+			if(this.particleArray[i].position.y <= -2000){ //0
 				this.particleMaterial.attributes.visible.value[i] = 0.0;
 				// recycleIndices.push(i);
 			}
