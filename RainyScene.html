@@ -49,7 +49,7 @@ Rainy scene using Particle system by Karolina Mura and Michał Ćwiertnia
 
 <script>
 
-var scene, camera, renderer, container;
+var scene, camera, renderer, container, curentMaterials, boxNr;
 var rainEngines = [];
 var cloudEngines = [];
 var clock = new THREE.Clock();
@@ -117,6 +117,8 @@ function init(){
 	scene.add(light);
 	
 	//add skybox
+	boxNr = 1;
+
 	var imgMaterials1 = [
 	initMaterial("images/cw3_c.jpg"), //right
 	initMaterial("images/cw1_c.jpg"),	//left
@@ -124,8 +126,22 @@ function init(){
 	initMaterial("images/dol.jpg"),//bottom
 	initMaterial("images/cw2_c.jpg"), //front
 	initMaterial("images/cw4_c.jpg")];//back
-	
-		var skyMaterial = new THREE.MeshFaceMaterial(imgMaterials);
+
+	var imgMaterials2 = [
+	initMaterial("images/right.jpg"), //right
+	initMaterial("images/left.jpg"),	//left
+	initMaterial("images/top.jpg"), //top
+	initMaterial("images/bottom.jpg"),//bottom
+	initMaterial("images/front.jpg"), //front
+	initMaterial("images/back.jpg")];//back
+	if(boxNr == 1){
+		curentMaterials = imgMaterials1;
+	}
+	else {
+		curentMaterials = imgMaterials2;
+	}
+
+		var skyMaterial = new THREE.MeshFaceMaterial(curentMaterials);
 		var skyBox = new THREE.Mesh(new THREE.CubeGeometry(
 			50000, 50000, 50000, 1, 1, 1, null, true), skyMaterial);
 		skyBox.scale.set(-1,1,1);
@@ -176,6 +192,7 @@ function init(){
 		cloudColorChange: true,
 		windSpeedX: 0.0,
 		windSpeedZ: 0.0,
+		currentScene: "lake",
 		reset: function() { reset() }
 	};
 	
@@ -211,12 +228,14 @@ function init(){
 		}
 	});
 	
+
+
 	var dir2 = gui.addFolder('Clouds');
 	var cloudsParticlesNumber = dir2.add(parameters, 'cloudsParticlesNumber').min(80).max(120).step(10).name('Particles').listen();
 	var cloudSize = dir2.add(parameters, 'cloudSize').min(40.0).max(120.0).step(10.0).name('Size').listen();
 	var cloudVelocityX = dir2.add(parameters, 'cloudVelocityX').min(20).max(80).step(5).name('Velocity X').listen();
 	var cloudVelocityZ = dir2.add(parameters, 'cloudVelocityZ').min(-80).max(80).step(10).name('Velocity Z').listen();
-	var cloudColorChange = dir2.add(parameters, 'cloudColorChange').name("Color change").listen()
+	var cloudColorChange = dir2.add(parameters, 'cloudColorChange').name("Color change").listen();
 	
 	cloudsParticlesNumber.onChange(function (value) {
 		cloudParameters.particlesPerSecond = value;
@@ -296,6 +315,29 @@ function init(){
 	});
 	
 	gui.add(parameters, 'reset').name("Reset scene");
+
+	var dir4 = gui.addFolder('SkyBox');
+	var currentScene = dir4.add(parameters, 'currentScene', 
+		["mountains", "lake"]).name("SkyBox scene").listen();
+
+	currentScene.onChange(function(e){
+		scene.remove(skyBox);
+		switch(e){
+			case "mountains":
+				boxNr = 2;
+				curentMaterials = imgMaterials2;
+				break;
+			case "lake":
+				boxNr = 1;
+				curentMaterials = imgMaterials1;
+				break;
+		}
+		skyMaterial = new THREE.MeshFaceMaterial(curentMaterials);
+		skyBox = new THREE.Mesh(new THREE.CubeGeometry(
+			50000, 50000, 50000, 1, 1, 1, null, true), skyMaterial);
+		skyBox.scale.set(-1,1,1);
+		scene.add(skyBox);
+	});
 }
 
 function animate(){
