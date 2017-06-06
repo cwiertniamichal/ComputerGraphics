@@ -24,7 +24,7 @@ function Rain(){
 		this.positionSpread = new THREE.Vector3( 390, 0, 290 ); //(200,0,200)
 
 		this.velocityBase = new THREE.Vector3( 0, -400, 0 );
-		this.velocitySpread = new THREE.Vector3( 10, 50, 10 );
+		this.velocitySpread = new THREE.Vector3( 3, 17, 3 ); //10,40,10
 		this.accelerationBase = new THREE.Vector3( 0, -10,0 );
 		
 		this.particleTexture = THREE.ImageUtils.loadTexture( 'images/raindrop2flip.png' );
@@ -37,7 +37,7 @@ function Rain(){
 		//colorModifier: new Modifier([0, 1, 4, 5], [new THREE.Vector3(0.66, 1.0, 0.7), new THREE.Vector3(0.0, 0.0, 0.0), new THREE.Vector3(1.0, 1.0, 1.0), new THREE.Vector3(0.66, 1.0, 0.7)]),
 		this.opacityBase = 0.6;
 
-		this.particlesPerSecond = 80; //50
+		this.particlesPerSecond = 110; //50
 		this.particleDeathAge = 3.0;		
 		this.emitterDeathAge = 999999;
 		
