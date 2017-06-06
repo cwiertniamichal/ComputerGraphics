@@ -57,6 +57,15 @@ var clock = new THREE.Clock();
 init()
 animate()
 
+function initMaterial(path){
+	var texture = THREE.ImageUtils.loadTexture(path);
+	var material = new THREE.MeshBasicMaterial({
+		map: texture,
+		overdraw: 0.5
+	});
+	return material;
+}
+
 function init(){
 	// create scene
 	scene = new THREE.Scene();
@@ -67,7 +76,7 @@ function init(){
 	var VIEW_ANGLE = 45;
 	var ASPECT = SCREEN_WIDTH / SCREEN_HEIGHT
 	var NEAR = 2;
-	var FAR = 5000;
+	var FAR = 200000;
 	camera = new THREE.PerspectiveCamera(VIEW_ANGLE, ASPECT, NEAR, FAR);
 	scene.add(camera);
 	camera.position.set(0, 200, 600);
@@ -107,12 +116,27 @@ function init(){
 	light.position.set(0, 250, 0);
 	scene.add(light);
 	
+	//add skybox
+	var imgMaterials = [
+	initMaterial("images/right.jpg"), 
+	initMaterial("images/left.jpg"),
+	initMaterial("images/top.jpg"), 
+	initMaterial("images/bottom.jpg"),
+	initMaterial("images/front.jpg"), 
+	initMaterial("images/back.jpg")];
+		var skyMaterial = new THREE.MeshFaceMaterial(imgMaterials);
+		var skyBox = new THREE.Mesh(new THREE.CubeGeometry(
+			100000, 100000, 100000, 1, 1, 1, null, true), skyMaterial);
+		skyBox.scale.set(-1,1,1);
+		scene.add(skyBox);
+
+	//addskybox - end
 	// add floor - just for now, later can be replaced with skyBox
 	var floorTexture = new THREE.ImageUtils.loadTexture('images/checkerboard.jpg');
 	floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping; 
 	floorTexture.repeat.set( 10, 10 );
 	var floorMaterial = new THREE.MeshBasicMaterial( { color: 0x444444, map: floorTexture, side: THREE.DoubleSide } );
-	var floorGeometry = new THREE.PlaneGeometry(1000, 1000, 10, 10);
+	var floorGeometry = new THREE.PlaneGeometry(100, 100, 10, 10);
 	var floor = new THREE.Mesh(floorGeometry, floorMaterial);
 	floor.position.y = -10.5;
 	floor.rotation.x = Math.PI / 2;
