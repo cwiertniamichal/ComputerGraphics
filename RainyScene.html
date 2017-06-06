@@ -117,20 +117,20 @@ function init(){
 	scene.add(light);
 	
 	//add skybox
-	var imgMaterials = [
-	initMaterial("images/right.jpg"), 
-	initMaterial("images/left.jpg"),
-	initMaterial("images/top.jpg"), 
-	initMaterial("images/bottom.jpg"),
-	initMaterial("images/front.jpg"), 
-	initMaterial("images/back.jpg")];
+	var imgMaterials1 = [
+	initMaterial("images/cw3_c.jpg"), //right
+	initMaterial("images/cw1_c.jpg"),	//left
+	initMaterial("images/gora.jpg"), //top
+	initMaterial("images/dol.jpg"),//bottom
+	initMaterial("images/cw2_c.jpg"), //front
+	initMaterial("images/cw4_c.jpg")];//back
+	
 		var skyMaterial = new THREE.MeshFaceMaterial(imgMaterials);
 		var skyBox = new THREE.Mesh(new THREE.CubeGeometry(
 			50000, 50000, 50000, 1, 1, 1, null, true), skyMaterial);
 		skyBox.scale.set(-1,1,1);
 		scene.add(skyBox);
 
-	//addskybox - end
 	// add floor - just for now, later can be replaced with skyBox
 	var floorTexture = new THREE.ImageUtils.loadTexture('images/checkerboard.jpg');
 	floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping; 
